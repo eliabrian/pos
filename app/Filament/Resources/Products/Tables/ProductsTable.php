@@ -2,9 +2,13 @@
 
 namespace App\Filament\Resources\Products\Tables;
 
+use App\Filament\Imports\ProductImporter;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
+use Filament\Actions\ImportAction;
+use Filament\Facades\Filament;
+use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
@@ -24,17 +28,29 @@ class ProductsTable
 
                 TextColumn::make('name')
                     ->label('Nama')
-                    ->searchable(),
+                    ->searchable()
+                    ->sortable(),
 
                 TextColumn::make('category.name')
                     ->label('Kategori')
-                    ->searchable(),
+                    ->searchable()
+                    ->sortable(),
 
                 TextColumn::make('price')
-                    ->money('IDR', decimalPlaces: 0),
+                    ->money('IDR', decimalPlaces: 0)
+                    ->sortable(),
 
                 IconColumn::make('is_visible')
                     ->label('Visibilitas'),
+            ])
+            ->headerActions([
+                ImportAction::make()
+                    ->importer(ProductImporter::class)
+                    ->label('Unggah Produk')
+                    ->icon(Heroicon::ArrowUpTray)
+                    ->options([
+                        'tenant_id' => Filament::getTenant()->id,
+                    ]),
             ])
             ->filters([
                 //

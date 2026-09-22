@@ -10,8 +10,12 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Group;
 use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 use Filament\Support\RawJs;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Storage;
 
 class ProductForm
 {
@@ -47,27 +51,42 @@ class ProductForm
                                 ->columnSpanFull()
                                 ->mask(RawJs::make('$money($input)'))
                                 ->stripCharacters(',')
-                                ->placeholder(0),
+                                ->placeholder(0)
+                                ->live()
+                                ->afterStateUpdated(function (Get $get, Set $set, ?string $state) {
+                                    $discount = $get('discount');
+                                    $reduced = $state * ($discount / 100);
+                                    $finalPrice = $state - $reduced;
+                                    $set('final_price', $finalPrice);
+                                }),
 
                             TextInput::make('discount')
                                 ->label('Diskon')
                                 ->numeric()
+                                ->default(0)
                                 ->minValue(0)
                                 ->maxValue(100)
                                 ->suffix('%')
                                 ->columnSpan(1)
-                                ->placeholder(0),
+                                ->placeholder(0)
+                                ->live()
+                                ->afterStateUpdated(function (Get $get, Set $set, ?string $state) {
+                                    $price = $get('price');
+                                    $reduced = $price * ($state / 100);
+                                    $finalPrice = $price - $reduced;
+                                    $set('final_price', $finalPrice);
+                                }),
 
                             TextInput::make('final_price')
-                                ->label('Harga Diskon')
+                                ->label('Harga Akhir')
                                 ->numeric()
                                 ->minValue(0)
                                 ->columnSpan(2)
                                 ->prefix('Rp')
-                                ->beforeContent('->')
                                 ->mask(RawJs::make('$money($input)'))
                                 ->stripCharacters(',')
-                                ->placeholder(0),
+                                ->placeholder(0)
+                                ->disabled(),
                         ]),
 
                     Section::make('Inventaris')
@@ -90,7 +109,7 @@ class ProductForm
                         ->schema([
                             Select::make('category')
                                 ->label('Kategori')
-                                ->relationship('category', 'name')
+                                ->relationship('category', 'name', modifyQueryUsing: fn (Builder $query) => $query->visible()->orderBy('sort'))
                                 ->required()
                                 ->selectablePlaceholder(false)
                                 ->native(false)
@@ -115,7 +134,13 @@ class ProductForm
                                 ->maxSize(2048)
                                 ->imageEditor()
                                 ->visibility('public')
-                                ->directory('product-images'),
+                                ->directory('product-images')
+                                ->deleteUploadedFileUsing(function ($file, $record) {
+                                    $record->image = null;
+                                    $record->save();
+
+                                    Storage::disk('public')->delete($file);
+                                }),
                         ]),
                 ])
             ]);
