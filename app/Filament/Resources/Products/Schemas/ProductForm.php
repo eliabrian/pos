@@ -3,7 +3,10 @@
 namespace App\Filament\Resources\Products\Schemas;
 
 use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\Repeater\TableColumn;
 use Filament\Forms\Components\RichEditor;
+use Filament\Forms\Components\RichEditor\TextColor;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -89,6 +92,11 @@ class ProductForm
                                 ->disabled(),
                         ]),
 
+                    Section::make('Varian Produk')
+                        ->schema([
+                            static::getVariantsRepeater(),
+                        ]),
+
                     Section::make('Inventaris')
                         ->columns(2)
                         ->schema([
@@ -102,7 +110,7 @@ class ProductForm
                                 ->minValue(0)
                         ])
                 ])
-                ->columnSpan(2),
+                ->columnSpan(['xl' => 2, 'lg' => 'full', 'md' => 'full']),
 
                 Group::make([
                     Section::make('Asosiasi Produk')
@@ -143,6 +151,57 @@ class ProductForm
                                 }),
                         ]),
                 ])
+                ->columnSpan(['xl' => 1, 'lg' => 'full', 'md' => 'full']),
+            ]);
+    }
+
+    public static function getVariantsRepeater(): Repeater
+    {
+        return Repeater::make('variants')
+            ->columns(2)
+            ->hiddenLabel()
+            ->relationship('variants')
+            ->addActionLabel('Tambah Tipe Varian')
+            ->itemLabel(fn (array $state): ?string => $state['name'] ?? null)
+            ->schema([
+                TextInput::make('name')
+                    ->hiddenLabel()
+                    ->placeholder('Masukkan nama varian di sini...')
+                    ->required()
+                    ->columnSpanFull(),
+
+                Toggle::make('is_required')
+                    ->label('Wajib Dipilih'),
+
+                Toggle::make('allow_multiple')
+                    ->label('Pilihan Lebih Dari Satu?')
+                    ->live(),
+
+                Repeater::make('variant_items')
+                    ->label('Pilihan Varian')
+                    ->hiddenLabel()
+                    ->columnSpanFull()
+                    ->relationship('variantItems')
+                    ->addActionLabel('+ Tambah Opsi')
+                    ->orderColumn('sort')
+                    ->compact()
+                    ->table([
+                        TableColumn::make('Nama'),
+                        TableColumn::make('Harga Varian')
+                            ->width(200),
+                    ])
+                    ->schema([
+                        TextInput::make('name')
+                            ->required(),
+
+                        TextInput::make('price')
+                            ->numeric()
+                            ->default(0)
+                            ->minValue(0)
+                            ->prefix('Rp')
+                            ->mask(RawJs::make('$money($input)'))
+                            ->stripCharacters(','),
+                    ]),
             ]);
     }
 }

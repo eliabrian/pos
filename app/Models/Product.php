@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable(['name', 'tenant_id', 'category_id', 'sku', 'image', 'description', 'stock', 'price', 'discount', 'final_price', 'is_visible'])]
 class Product extends Model
@@ -44,5 +45,10 @@ class Product extends Model
     public function category(): BelongsTo
     {
         return $this->belongsTo(Category::class);
+    }
+
+    public function variants(): HasMany
+    {
+        return $this->hasMany(Variant::class);
     }
 }

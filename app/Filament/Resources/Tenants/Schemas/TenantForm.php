@@ -3,9 +3,11 @@
 namespace App\Filament\Resources\Tenants\Schemas;
 
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
+use Illuminate\Support\Facades\Auth;
 
 class TenantForm
 {
@@ -14,25 +16,26 @@ class TenantForm
         return $schema
             ->columns(3)
             ->components([
-                Section::make('Tenant Informations')
+                Section::make('Informasi Tenant')
                     ->columns(2)
-                    ->columnSpan(2)
+                    ->columnSpan(fn () => Auth::user()->isSystemAdmin() ? 2 : 3)
                     ->schema([
                         TextInput::make('name')
-                            ->label('Tenant Name')
+                            ->label('Nama Tenant')
                             ->required()
                             ->maxLength(255),
 
                         TextInput::make('slug')
-                            ->label('Tenant Domain')
+                            ->label('Domain Tenant')
                             ->required()
                             ->maxLength(255)
                             ->prefix('https://')
                             ->suffix('pos.test')
-                            ->unique(ignoreRecord: true),
+                            ->unique(ignoreRecord: true)
+                            ->disabled(fn (): bool => ! Auth::user()->isSystemAdmin()),
 
                         TextInput::make('phone')
-                            ->label('Phone')
+                            ->label('Telepon')
                             ->placeholder('+62-812-3456-7890'),
 
                         TextInput::make('business_email')
@@ -41,13 +44,14 @@ class TenantForm
                             ->email()
                             ->placeholder('example@email.com'),
 
-                        TextInput::make('address')
-                            ->label('Address')
+                        Textarea::make('address')
+                            ->label('Alamat Lengkap')
                             ->maxLength('255')
                             ->columnSpanFull(),
                     ]),
 
                 Section::make('Tenant Status')
+                    ->visible(fn () => Auth::user()->isSystemAdmin())
                     ->schema([
                         Select::make('plan')
                             ->options([

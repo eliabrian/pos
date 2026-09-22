@@ -2,6 +2,7 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Pages\Tenancy\EditTenantProfile;
 use App\Filament\Pages\Tenancy\RegisterTenant;
 use App\Models\Tenant;
 use Filament\Enums\UserMenuPosition;
@@ -36,6 +37,7 @@ class AdminPanelProvider extends PanelProvider
             ->login()
             ->profile()
             ->tenant(Tenant::class, 'slug')
+            ->tenantProfile(EditTenantProfile::class)
             ->userMenu(position: UserMenuPosition::Sidebar)
             // ->globalSearchKeyBindings(['command+k', 'ctrl+k'])
             // ->globalSearchFieldKeyBindingSuffix()

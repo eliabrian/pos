@@ -21,7 +21,11 @@ class TenantPolicy
      */
     public function view(User $user, Tenant $tenant): bool
     {
-        return $user->isSystemAdmin();
+        if (! $user->isSystemAdmin()) {
+            $pivot = $user->tenants()->where('tenant_id', $tenant->id)->first()->pivot;
+        }
+
+        return $user->isSystemAdmin() || ($pivot && $pivot->role === 'owner');
     }
 
     /**
@@ -37,7 +41,11 @@ class TenantPolicy
      */
     public function update(User $user, Tenant $tenant): bool
     {
-        return $user->isSystemAdmin();
+        if (! $user->isSystemAdmin()) {
+            $pivot = $user->tenants()->where('tenant_id', $tenant->id)->first()->pivot;
+        }
+
+        return $user->isSystemAdmin() || ($pivot && $pivot->role === 'owner');
     }
 
     /**
