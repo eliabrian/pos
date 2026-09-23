@@ -7,9 +7,10 @@ use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['name', 'tenant_id', 'category_id', 'sku', 'image', 'description', 'stock', 'price', 'discount', 'final_price', 'is_visible'])]
+#[Fillable(['name', 'tenant_id', 'category_id', 'sku', 'image', 'description', 'stock', 'price', 'discount', 'final_price', 'sort', 'is_visible'])]
 class Product extends Model
 {
     /**
@@ -24,6 +25,7 @@ class Product extends Model
             'price' => 'float',
             'discount' => 'float',
             'final_price' => 'float',
+            'sort' => 'integer',
             'is_visible' => 'boolean',
         ];
     }
@@ -50,5 +52,13 @@ class Product extends Model
     public function variants(): HasMany
     {
         return $this->hasMany(Variant::class);
+    }
+
+    public function orders(): BelongsToMany
+    {
+        return $this->belongsToMany(Order::class)
+            ->using(OrderProduct::class)
+            ->withPivot(['unit_name', 'quantity', 'unit_price', 'sub_total', 'variant_selected', 'notes'])
+            ->chaperone();
     }
 }
