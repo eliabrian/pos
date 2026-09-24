@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
+use App\Models\Tenant;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -15,7 +16,7 @@ class AuthController extends Controller
         $request->validate([
             'email' => 'required|email',
             'password' => 'required',
-            'tenant_id' => 'required|exists:tenants,id',
+            'tenant_id' => 'required|exists:tenants,slug',
         ]);
 
         $user = User::where('email', $request->email)->first();
@@ -26,19 +27,22 @@ class AuthController extends Controller
             ]);
         }
 
-        if (! $user->tenants()->where('tenant_id', $request->tenant_id)->exists()) {
+        if (! $user->tenants()->where('slug', $request->tenant_id)->exists()) {
              throw ValidationException::withMessages([
                 'tenant_id' => ['Anda tidak memiliki akses ke toko ini.'],
             ]);
         }
 
-        $token = $user->createToken('pos-app', ['tenant:' . $request->tenant_id]);
+        $token = $user->createToken('pos-app', ['tenant:' . Tenant::where('slug', $request->tenant_id)->first()->id]);
 
         return response()->json([
             'token' => $token->plainTextToken,
+            'tenant' => [
+                'name' => Tenant::where('slug', $request->tenant_id)->first()->name,
+            ],
             'user' => [
                 'name' => $user->name,
-                'role' => $user->tenants()->where('tenant_id', $request->tenant_id)->first()->pivot->role,
+                'role' => $user->tenants()->where('slug', $request->tenant_id)->first()->pivot->role,
             ],
         ]);
     }

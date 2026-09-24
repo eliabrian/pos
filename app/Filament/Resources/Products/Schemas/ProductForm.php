@@ -89,7 +89,8 @@ class ProductForm
                                 ->mask(RawJs::make('$money($input)'))
                                 ->stripCharacters(',')
                                 ->placeholder(0)
-                                ->disabled(),
+                                ->disabled()
+                                ->dehydrated(),
                         ]),
 
                     Section::make('Varian Produk')
