@@ -9,6 +9,7 @@ use App\Models\VariantItem;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class OrderController extends Controller
 {
@@ -30,6 +31,7 @@ class OrderController extends Controller
         $validated = $request->validate([
             'payment_method' => 'required|string',
             'status' => 'nullable|string',
+            'order_discount' => 'nullable',
             'products' => 'required|array|min:1',
             'products.*.id' => 'required|exists:products,id',
             'products.*.quantity' => 'required|integer|min:1',
@@ -71,6 +73,7 @@ class OrderController extends Controller
                 'total_price' => 0,
                 'payment_method' => $validated['payment_method'],
                 'status' => $validated['status'] ?? 'completed',
+                'order_discount' => $validated['order_discount'],
             ]);
 
             $totalPrice = 0;
@@ -117,6 +120,11 @@ class OrderController extends Controller
                 if ($product->stock > 0) {
                     $product->decrement('stock', $item['quantity']);
                 }
+            }
+
+            if ($order->order_discount) {
+                $discountAmount = ($order->order_discount / 100) * $totalPrice;
+                $totalPrice = $totalPrice - $discountAmount;
             }
 
             $order->update(['total_price' => $totalPrice]);
