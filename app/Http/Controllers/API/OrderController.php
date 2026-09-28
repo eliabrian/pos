@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\OrderResource;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\VariantItem;
@@ -13,6 +14,26 @@ use Illuminate\Validation\ValidationException;
 
 class OrderController extends Controller
 {
+    public function index(Request $request)
+    {
+        $tokenAbilities = collect($request->user()->currentAccessToken()->abilities);
+        $tenantAbility = $tokenAbilities->first(fn($ability) => str_starts_with($ability, 'tenant:'));
+
+        if (!$tenantAbility) {
+            return response()->json(['message' => 'Tenant context missing from token.'], 403);
+        }
+
+        $tenantId = explode(':', $tenantAbility)[1];
+
+        $orders = Order::with([
+            'products',
+        ])
+        ->where('tenant_id', $tenantId)
+        ->orderBy('created_at', 'desc')
+        ->get();
+
+        return OrderResource::collection($orders);
+    }
     public function store(Request $request)
     {
         // Idempotency Lock (Payload Signature Lock)
