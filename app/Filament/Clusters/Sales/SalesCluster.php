@@ -20,7 +20,7 @@ class SalesCluster extends Cluster
 
     protected static ?int $navigationSort = 0;
 
-    protected static ?SubNavigationPosition $subNavigationPosition = SubNavigationPosition::Top;
+    // protected static ?SubNavigationPosition $subNavigationPosition = SubNavigationPosition::Top;
 
     public static function canAccess(): bool
     {

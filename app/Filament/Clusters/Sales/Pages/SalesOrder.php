@@ -3,9 +3,11 @@
 namespace App\Filament\Clusters\Sales\Pages;
 
 use App\Filament\Clusters\Sales\SalesCluster;
+use App\Filament\Exports\SalesOrderExporter;
 use App\Models\Order;
 use BackedEnum;
 use Carbon\Carbon;
+use Filament\Actions\ExportAction;
 use Filament\Pages\Page;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\Summarizers\Sum;
@@ -58,6 +60,12 @@ class SalesOrder extends Page implements HasTable
                 Order::query()->fromSub($groupedQuery, 'orders')
             )
             ->defaultSort('date', 'desc')
+            ->headerActions([
+                ExportAction::make()
+                    ->exporter(SalesOrderExporter::class)
+                    ->label('Unduh Data')
+                    ->icon(Heroicon::ArrowDownTray),
+            ])
             ->columns([
                 TextColumn::make('date')
                     ->label('Tanggal')
