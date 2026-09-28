@@ -13,6 +13,8 @@ use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\Indicator;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Malzariey\FilamentDaterangepickerFilter\Filters\DateRangeFilter;
+use Zvizvi\FilamentColumnFilters\Filters\ColumnFilter;
 
 class OrdersTable
 {
@@ -52,38 +54,8 @@ class OrdersTable
             ])
             ->defaultSort('created_at', 'desc')
             ->filters([
-                Filter::make('created_at')
-                    ->schema([
-                        DatePicker::make('created_from')
-                            ->label('Dari Tanggal')
-                            ->default(now()),
-                        DatePicker::make('created_until')
-                            ->label('Sampai Tanggal')
-                            ->default(now()),
-                    ])
-                    ->query(function (Builder $query, array $data): Builder {
-                        return $query
-                            ->when(
-                                $data['created_from'],
-                                fn (Builder $query, $date): Builder => $query->whereDate('created_at', '>=', $date),
-                            )
-                            ->when(
-                                $data['created_until'],
-                                fn (Builder $query, $date): Builder => $query->whereDate('created_at', '<=', $date),
-                            );
-                    })
-                    ->indicateUsing(function (array $data): array {
-                        $indicators = [];
-                        if ($data['created_from'] ?? null) {
-                            $indicators[] = Indicator::make('Dari: ' . Carbon::parse($data['created_from'])->format('d M Y'))
-                                ->removeField('created_from');
-                        }
-                        if ($data['created_until'] ?? null) {
-                            $indicators[] = Indicator::make('Sampai: ' . Carbon::parse($data['created_until'])->format('d M Y'))
-                                ->removeField('created_until');
-                        }
-                        return $indicators;
-                    }),
+                DateRangeFilter::make('created_at')
+                    ->defaultToday(),
             ])
             ->recordActions([
                 ViewAction::make(),

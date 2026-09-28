@@ -43,15 +43,6 @@ class ProductsTable
                 IconColumn::make('is_visible')
                     ->label('Visibilitas'),
             ])
-            ->headerActions([
-                ImportAction::make()
-                    ->importer(ProductImporter::class)
-                    ->label('Unggah Produk')
-                    ->icon(Heroicon::ArrowUpTray)
-                    ->options([
-                        'tenant_id' => Filament::getTenant()->id,
-                    ]),
-            ])
             ->filters([
                 //
             ])
@@ -59,6 +50,15 @@ class ProductsTable
                 EditAction::make(),
             ])
             ->toolbarActions([
+                ImportAction::make()
+                    ->importer(ProductImporter::class)
+                    ->label('Unggah')
+                    ->icon(Heroicon::ArrowUpTray)
+                    ->options([
+                        'tenant_id' => Filament::getTenant()->id,
+                    ])
+                    ->modalHeading('Unggah Produk')
+                    ->modalSubmitActionLabel('Unggah'),
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),
                 ]),

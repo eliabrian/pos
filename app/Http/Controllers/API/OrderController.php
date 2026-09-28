@@ -25,15 +25,21 @@ class OrderController extends Controller
 
         $tenantId = explode(':', $tenantAbility)[1];
 
-        $orders = Order::with([
-            'products',
-        ])
-        ->where('tenant_id', $tenantId)
+        $query = Order::with(['products']);
+
+        if ($request->has('date')) {
+            $query->whereDate('created_at', $request->date);
+        } else {
+            $query->whereDate('created_at', now()->toDateString());
+        }
+
+        $orders = $query->where('tenant_id', $tenantId)
         ->orderBy('created_at', 'desc')
         ->get();
 
         return OrderResource::collection($orders);
     }
+
     public function store(Request $request)
     {
         // Idempotency Lock (Payload Signature Lock)

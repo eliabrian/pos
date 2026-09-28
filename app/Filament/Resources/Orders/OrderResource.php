@@ -29,6 +29,8 @@ class OrderResource extends Resource
 
     protected static string|UnitEnum|null $navigationGroup = 'Laporan';
 
+    protected static ?int $navigationSort = 1;
+
     public static function infolist(Schema $schema): Schema
     {
         return OrderInfolist::configure($schema);

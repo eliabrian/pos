@@ -10,7 +10,7 @@ class ListOrders extends ListRecords
 {
     protected static string $resource = OrderResource::class;
 
-    protected static ?string $title = 'Transaksi';
+    protected static ?string $title = 'Laporan Transaksi';
 
     protected function getHeaderActions(): array
     {
