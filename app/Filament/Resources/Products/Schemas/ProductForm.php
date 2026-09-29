@@ -164,6 +164,7 @@ class ProductForm
             ->relationship('variants')
             ->addActionLabel('Tambah Tipe Varian')
             ->itemLabel(fn (array $state): ?string => $state['name'] ?? null)
+            ->defaultItems(0)
             ->schema([
                 TextInput::make('name')
                     ->hiddenLabel()

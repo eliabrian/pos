@@ -3,8 +3,8 @@
 namespace App\Filament\Clusters\Sales\Pages;
 
 use App\Filament\Clusters\Sales\SalesCluster;
-use App\Filament\Exports\SalesProductExporter;
-use App\Models\Product;
+use App\Filament\Exports\SalesCategoryExporter;
+use App\Models\Category;
 use BackedEnum;
 use Carbon\Carbon;
 use Filament\Actions\ExportAction;
@@ -15,39 +15,36 @@ use Filament\Tables\Columns\Summarizers\Summarizer;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
-use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 use Malzariey\FilamentDaterangepickerFilter\Filters\DateRangeFilter;
 
-class SalesProduct extends Page implements HasTable
+class SalesCategory extends Page implements HasTable
 {
     use InteractsWithTable;
 
-    protected string $view = 'filament.clusters.sales.pages.sales-product';
+    protected string $view = 'filament.clusters.sales.pages.sales-category';
 
     protected static ?string $cluster = SalesCluster::class;
 
-    protected static ?string $title = "Laporan Penjualan Produk";
+    protected static ?string $title = 'Laporan Penjualan Kategori';
 
-    protected static ?string $navigationLabel = "Produk";
+    protected static ?string $navigationLabel = 'Kategori';
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCube;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedTag;
 
-    protected static ?int $navigationSort = 1;
+    protected static ?int $navigationSort = 2;
 
     public function table(Table $table): Table
     {
         return $table
             ->query(
-                Product::query()
-                    ->select('products.*')
-                    ->with(['category'])
+                Category::query()
+                    ->select('categories.*')
                     ->where('tenant_id', Filament::getTenant()->id)
             )
             ->modifyQueryUsing(function (Builder $query) {
-
                 $filterState = $this->getTableFilterState('date_range') ?? [];
                 $dateString = $filterState['date_range'] ?? null;
 
@@ -65,39 +62,31 @@ class SalesProduct extends Page implements HasTable
 
                 $query->addSelect([
                     'total_sold' => DB::table('order_product')
+                        ->join('products', 'products.id', '=', 'order_product.product_id')
                         ->join('orders', 'orders.id', '=', 'order_product.order_id')
-                        ->whereColumn('order_product.product_id', 'products.id')
+                        ->whereColumn('products.category_id', 'categories.id')
                         ->where($applyDates)
                         ->selectRaw('COALESCE(SUM(order_product.quantity), 0)'),
 
                     'total_price' => DB::table('order_product')
+                        ->join('products', 'products.id', '=', 'order_product.product_id')
                         ->join('orders', 'orders.id', '=', 'order_product.order_id')
-                        ->whereColumn('order_product.product_id', 'products.id')
+                        ->whereColumn('products.category_id', 'categories.id')
                         ->where($applyDates)
                         ->selectRaw('COALESCE(SUM(order_product.sub_total), 0)'),
                 ]);
             })
             ->filters([
-                SelectFilter::make('category')
-                    ->label('Kategori')
-                    ->relationship('category', 'name')
-                    ->searchable()
-                    ->preload(),
-
                 DateRangeFilter::make('date_range')
                     ->label('Rentang Waktu')
-                    ->query(fn ($query) =>$query)
+                    ->query(fn ($query) => $query)
                     ->defaultThisMonth(),
             ])
             ->columns([
                 TextColumn::make('name')
-                    ->label('Nama Produk')
+                    ->label('Nama Kategori')
                     ->sortable()
                     ->searchable(),
-
-                TextColumn::make('category.name')
-                    ->label('Kategori')
-                    ->sortable(),
 
                 TextColumn::make('total_sold')
                     ->label('Kuantitas Terjual')
@@ -105,7 +94,7 @@ class SalesProduct extends Page implements HasTable
                     ->summarize(
                         Summarizer::make()
                             ->hiddenLabel()
-                            ->using(fn ($query) =>$query->get()->sum('total_sold'))
+                            ->using(fn ($query) => $query->get()->sum('total_sold'))
                     ),
 
                 TextColumn::make('total_price')
@@ -116,15 +105,15 @@ class SalesProduct extends Page implements HasTable
                         Summarizer::make()
                             ->hiddenLabel()
                             ->money('IDR', locale: 'id')
-                            ->using(fn ($query) =>$query->get()->sum('total_price'))
+                            ->using(fn ($query) => $query->get()->sum('total_price'))
                     ),
             ])
+            ->paginated(false)
             ->headerActions([
                 ExportAction::make()
-                    ->exporter(SalesProductExporter::class)
                     ->label('Unduh')
-                    ->icon(Heroicon::ArrowDownTray),
-            ])
-            ->paginated(false);
+                    ->icon(Heroicon::ArrowDownTray)
+                    ->exporter(SalesCategoryExporter::class),
+            ]);
     }
 }

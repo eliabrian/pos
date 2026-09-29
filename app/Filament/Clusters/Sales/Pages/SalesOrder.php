@@ -33,7 +33,7 @@ class SalesOrder extends Page implements HasTable
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedDocumentText;
 
-    protected static ?int $navigationSort = 1;
+    protected static ?int $navigationSort = 0;
 
     public function table(Table $table): Table
     {
@@ -63,7 +63,7 @@ class SalesOrder extends Page implements HasTable
             ->headerActions([
                 ExportAction::make()
                     ->exporter(SalesOrderExporter::class)
-                    ->label('Unduh Data')
+                    ->label('Unduh')
                     ->icon(Heroicon::ArrowDownTray),
             ])
             ->columns([
