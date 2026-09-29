@@ -6,7 +6,10 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\OrderResource;
 use App\Models\Order;
 use App\Models\Product;
+use App\Models\Tenant;
 use App\Models\VariantItem;
+use App\Services\DokuService;
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -38,6 +41,43 @@ class OrderController extends Controller
         ->get();
 
         return OrderResource::collection($orders);
+    }
+
+    public function checkStatus(Request $request, Order $order)
+    {
+        if ($order->status === 'completed') {
+            return response()->json([
+                'status' => 'completed',
+                'order' => $order
+            ]);
+        }
+
+        $tenant = $order->tenant;
+        $dokuService = new \App\Services\DokuService($tenant);
+
+        try {
+            $dokuResponse = $dokuService->checkStatus($order);
+
+            $transactionStatus = $dokuResponse['transaction']['status'] ?? 'PENDING';
+
+            if ($transactionStatus === 'SUCCESS') {
+                $order->update(['status' => 'completed']);
+            } elseif (in_array($transactionStatus, ['FAILED', 'EXPIRED'])) {
+                $order->update(['status' => 'pending']);
+            }
+
+            return response()->json([
+                'status' => $order->status,
+                'doku_status' => $transactionStatus,
+                'order' => $order
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Gagal mengecek status ke DOKU.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
     public function store(Request $request)
@@ -154,7 +194,26 @@ class OrderController extends Controller
                 $totalPrice = $totalPrice - $discountAmount;
             }
 
-            $order->update(['total_price' => $totalPrice]);
+            $order->total_price = $totalPrice;
+            $order->save();
+
+            if ($validated['payment_method'] === 'dynamic_qris') {
+                $tenant = Tenant::findOrFail($tenantId);
+                $dokuService = new DokuService($tenant);
+
+                $dokuResponse = $dokuService->dokuCheckout($order);
+
+                if (isset($dokuResponse['message']) && in_array('SUCCESS', (array)$dokuResponse['message'])) {
+                    $paymentUrl = $dokuResponse['response']['payment']['url'] ?? null;
+
+                    $order->update([
+                        'status' => 'pending',
+                        'payment_url' => $paymentUrl,
+                    ]);
+                } else {
+                    throw new Exception('Gagal generate DOKU Checkout: ' . json_encode($dokuResponse));
+                }
+            }
 
             return $order;
         });

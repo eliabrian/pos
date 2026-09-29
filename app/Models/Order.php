@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
-#[Fillable(['tenant_id', 'receipt_number', 'order_discount', 'total_price', 'status', 'payment_method'])]
+#[Fillable(['tenant_id', 'receipt_number', 'order_discount', 'total_price', 'status', 'payment_method', 'payment_url'])]
 class Order extends Model
 {
     protected static function booted()

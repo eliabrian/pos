@@ -21,4 +21,5 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('orders', [OrderController::class, 'index']);
     Route::post('/orders', [OrderController::class, 'store']);
+    Route::get('/orders/{order:receipt_number}/status', [OrderController::class, 'checkStatus']);
 });

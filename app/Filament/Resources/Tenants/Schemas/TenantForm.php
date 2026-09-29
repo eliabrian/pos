@@ -112,7 +112,7 @@ class TenantForm
                                         "digest_alg" => "sha256",
                                         "private_key_bits" => 2048,
                                         "private_key_type" => OPENSSL_KEYTYPE_RSA,
-                                        "config" => "C:/Users/it.developer/.config/herd/bin/php84/extras/ssl/openssl.cnf"
+                                        "config" => env('OPENSSL_CONFIG_PATH')
                                     ];
 
                                     $res = openssl_pkey_new($config);

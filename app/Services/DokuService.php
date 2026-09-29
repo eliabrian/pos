@@ -18,195 +18,80 @@ class DokuService
         $this->baseUrl = 'https://api-sandbox.doku.com';
     }
 
-    protected function generateAsymmetricSignature(string $clientId, string $timestamp, string $privateKey): string
+    public function checkStatus(Order $order)
     {
-        $stringToSign = $clientId . '|' . $timestamp;
-
-        $signature = '';
-
-        $isSigned = openssl_sign(
-            $stringToSign,
-            $signature,
-            $privateKey,
-            OPENSSL_ALGO_SHA256
-        );
-
-        if (!$isSigned) {
-            throw new \Exception('Gagal membuat signature RSA. Periksa format Private Key Anda.');
-        }
-
-        return base64_encode($signature);
-    }
-
-    protected function getTokenApi()
-    {
-        $targetPath = '/authorization/v1/access-token/b2b';
-
-        $timestamp = now()->format('c');
-
         $clientId = $this->tenant->payment_client_id;
-        $privateKey = $this->tenant->rsa_private_key;
-
-        $signature = $this->generateAsymmetricSignature($clientId, $timestamp, $privateKey);
-
-        $payload = [
-            'grantType' => 'client_credentials'
-        ];
-
-        $response = Http::withHeaders([
-            'X-SIGNATURE' => $signature,
-            'X-TIMESTAMP' => $timestamp,
-            'X-CLIENT-KEY' => $clientId,
-            'Content-Type' => 'application/json'
-        ])->post($this->baseUrl . $targetPath, $payload);
-
-        if ($response['responseCode'] == 2007300) {
-            return [
-                'access_token' => $response['accessToken'],
-                'expires_in' => $response['expiresIn'],
-            ];
-        };
-
-        return ['error' => $response['responseMessage']];
-    }
-
-    protected function generateSymmetricSignature(
-        string $method,
-        string $endpoint,
-        string $accessToken,
-        array $payload,
-        string $timestamp,
-        string $secretKey
-    ): string {
-
-        $minifiedBody = json_encode($payload);
-
-        $hashedBody = hash('sha256', $minifiedBody);
-
-        $stringToSign = implode(':', [
-            strtoupper($method),
-            $endpoint,
-            $accessToken,
-            $hashedBody,
-            $timestamp
-        ]);
-
-        $signature = hash_hmac('sha512', $stringToSign, $secretKey, true);
-
-        return base64_encode($signature);
-    }
-
-    public function generateQris($order)
-    {
-        $tokenData = $this->getTokenApi();
-
-        if (isset($tokenData['error'])) {
-            throw new \Exception('DOKU Token Error: ' . $tokenData['error']);
-        }
-
-        $accessToken = $tokenData['access_token'];
-
-        $targetPath = '/snap-adapter/b2b/v1.0/qr/qr-mpm-generate';
-        $timestamp = now()->format('c');
-        $externalId = Str::uuid()->toString();
-
-        $payload = [
-            "partnerReferenceNo" => $order->id,
-            "ammount" => [
-                "value" => number_format($order->total_price, 2, '.', ''),
-                "currency" => "IDR",
-            ],
-            "merchantId" => $this->tenant->qris_client_id,
-            "terminalId" => "A01",
-            "validityPeriod" => now()->addMinutes(30)->format('c'),
-        ];
-
-        $signature = $this->generateSymmetricSignature(
-            'POST',
-            $targetPath,
-            $accessToken,
-            $payload,
-            $timestamp,
-            $this->tenant->payment_secret_key,
-        );
-
-        $response = Http::withHeaders([
-            'X-PARTNER-ID' => $this->tenant->payment_client_id,
-            'X-EXTERNAL-ID' => $externalId,
-            'X-TIMESTAMP' => $timestamp,
-            'X-SIGNATURE' => $signature,
-            'Authorization' => 'Bearer ' . $accessToken,
-            'CHANNEL-ID' => 'H2H',
-            'Content-Type' => 'application/json',
-            'Accept' => '*/*'
-        ])->post($this->baseUrl . $targetPath, $payload);
-
-        dd($response);
-
-        return $response->json();
-    }
-
-    public function generateQrisDirect($order)
-    {
-        // Direct API endpoint for QRIS
-        $targetPath = '/orders/v1/qr/generate';
+        $requestTarget = '/orders/v1/status/' . $order->receipt_number;
 
         $requestId = Str::uuid()->toString();
+        $timestamp = now('UTC')->format('Y-m-d\TH:i:s\Z');
 
-        // Direct API specifically expects UTC time in this exact format
-        $timestamp = now()->timezone('UTC')->format('Y-m-d\TH:i:s\Z');
-
-        // Much simpler payload. Note: amount must be an integer, not a decimal string
-        $payload = [
-            'order' => [
-                'invoice_number' => $order->id . '-' . time(),
-                'amount' => (int) $order->total_price
-            ]
-        ];
-
-        $clientId = $this->tenant->payment_client_id;
-        $secretKey = $this->tenant->payment_secret_key;
-
-        $signature = $this->generateDirectSignature(
-            $clientId,
-            $requestId,
-            $timestamp,
-            $targetPath,
-            $payload,
-            $secretKey
-        );
+        $signature = $this->generateSignature('GET', [], $requestTarget, $requestId, $timestamp);
 
         $response = Http::withHeaders([
             'Client-Id' => $clientId,
             'Request-Id' => $requestId,
             'Request-Timestamp' => $timestamp,
             'Signature' => $signature,
-            'Content-Type' => 'application/json',
-        ])->post($this->baseUrl . $targetPath, $payload);
+        ])->get($this->baseUrl . $requestTarget);
 
         return $response->json();
     }
 
-    /**
-     * Generates DOKU Direct (Jokul) HMAC-SHA256 Signature
-     */
-    protected function generateDirectSignature($clientId, $requestId, $timestamp, $targetPath, $payload, $secretKey): string
+    public function dokuCheckout(Order $order)
     {
-        // 1. Minify payload and create SHA256 digest
-        $body = json_encode($payload);
-        $digest = base64_encode(hash('sha256', $body, true));
+        $payload = [
+            'order' => [
+                'amount' => (int) $order->total_price,
+                'invoice_number' => $order->receipt_number,
+            ],
+            'payment' => [
+                'payment_due_date' => 60,
+            ],
+        ];
 
-        // 2. Construct the exact StringToSign required by DOKU
-        $stringToSign = "Client-Id:" . $clientId . "\n"
-            . "Request-Id:" . $requestId . "\n"
-            . "Request-Timestamp:" . $timestamp . "\n"
-            . "Request-Target:" . $targetPath . "\n"
-            . "Digest:" . $digest;
+        $clientId = $this->tenant->payment_client_id;
+        $requestTarget = '/checkout/v1/payment';
 
-        // 3. Hash with HMAC-SHA256 using the Secret Key
-        $signature = base64_encode(hash_hmac('sha256', $stringToSign, $secretKey, true));
+        $requestId = Str::uuid()->toString();
+        $timestamp = now('UTC')->format('Y-m-d\TH:i:s\Z');
 
-        // 4. Return with the required prefix
-        return "HMACSHA256=" . $signature;
+        $signature = $this->generateSignature('POST', $payload, $requestTarget, $requestId, $timestamp);
+
+        $response = Http::withHeaders([
+            'Client-Id' => $clientId,
+            'Request-Id' => $requestId,
+            'Request-Timestamp' => $timestamp,
+            'Signature' => $signature,
+        ])->post($this->baseUrl . $requestTarget, $payload);
+
+        return $response->json();
+    }
+
+    public function generateSignature(string $method, array $payload, string $requestTarget, string $requestId, string $timestamp)
+    {
+        $jsonBody = json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+        $digest = base64_encode(hash('sha256', $jsonBody, true));
+
+        $clientId = $this->tenant->payment_client_id;
+        $secretKey = $this->tenant->payment_secret_key;
+
+        if ($method === 'GET') {
+            $stringToSign = "Client-Id:{$clientId}\n"
+                . "Request-Id:{$requestId}\n"
+                . "Request-Timestamp:{$timestamp}\n"
+                . "Request-Target:{$requestTarget}";
+        } else {
+            $stringToSign = "Client-Id:{$clientId}\n"
+                . "Request-Id:{$requestId}\n"
+                . "Request-Timestamp:{$timestamp}\n"
+                . "Request-Target:{$requestTarget}\n"
+                . "Digest:{$digest}";
+        }
+
+        $rawHmac = hash_hmac('sha256', $stringToSign, $secretKey, true);
+        $encodedHmac = base64_encode($rawHmac);
+
+        return 'HMACSHA256=' . $encodedHmac;
     }
 }
