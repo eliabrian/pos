@@ -37,8 +37,9 @@ class OrderController extends Controller
         }
 
         $orders = $query->where('tenant_id', $tenantId)
-        ->orderBy('created_at', 'desc')
-        ->get();
+            ->where('status', 'completed')
+            ->orderBy('created_at', 'desc')
+            ->get();
 
         return OrderResource::collection($orders);
     }

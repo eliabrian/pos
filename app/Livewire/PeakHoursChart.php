@@ -33,6 +33,7 @@ class PeakHoursChart extends ChartWidget
         $hourlyData = Order::query()
             ->where('tenant_id', Filament::getTenant()->id)
             ->whereBetween('created_at', [$start, $end])
+            ->where('status', 'completed')
             ->select([
                 DB::raw('HOUR(created_at) as hour'),
                 DB::raw('COUNT(id) as total_transactions')

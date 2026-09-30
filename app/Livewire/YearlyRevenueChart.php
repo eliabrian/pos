@@ -35,6 +35,7 @@ class YearlyRevenueChart extends ChartWidget
         $monthlyData = Order::query()
             ->where('tenant_id', $tenantId)
             ->whereYear('created_at', $year)
+            ->where('status', 'completed')
             ->select([
                 DB::raw('MONTH(created_at) as month'),
                 DB::raw('SUM(total_price) as total_revenue')
@@ -46,6 +47,7 @@ class YearlyRevenueChart extends ChartWidget
         $previousMonthlyData = Order::query()
             ->where('tenant_id', $tenantId)
             ->whereYear('created_at', $previousYear)
+            ->where('status', 'completed')
             ->select([
                 DB::raw('MONTH(created_at) as month'),
                 DB::raw('SUM(total_price) as total_revenue')

@@ -40,13 +40,32 @@ class DokuService
 
     public function dokuCheckout(Order $order)
     {
+        $items = [];
+        $products = $order->products;
+
+        foreach ($products as $index => $product) {
+            $items[$index] = [
+                'id' => $product->id,
+                'name' => $product->name,
+                'quantity' => $product->pivot->quantity,
+                'price' => (int) $product->pivot->unit_price,
+            ];
+        }
+
         $payload = [
             'order' => [
                 'amount' => (int) $order->total_price,
                 'invoice_number' => $order->receipt_number,
+                'currency' => 'IDR',
+                'language' => 'ID',
+                'line_items' => $items,
             ],
             'payment' => [
                 'payment_due_date' => 60,
+                'type' => 'SALE',
+                'payment_method_types' => [
+                    'QRIS'
+                ]
             ],
         ];
 

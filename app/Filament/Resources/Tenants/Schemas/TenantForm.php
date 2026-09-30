@@ -73,10 +73,6 @@ class TenantForm
                     ->icon(Heroicon::Key)
                     ->columnSpan(fn () => Auth::user()->isSystemAdmin() ? 2 : 3)
                     ->schema([
-                        TextInput::make('qris_client_id')
-                            ->label('QRIS Client ID')
-                            ->maxLength(255),
-
                         TextInput::make('payment_client_id')
                             ->label('Client ID')
                             ->maxLength(255),
@@ -91,47 +87,6 @@ class TenantForm
                             ->revealable()
                             ->dehydrated(fn ($state) => filled($state))
                             ->requiredWith('payment_client_id'),
-
-                        Hidden::make('rsa_private_key'),
-
-                        Textarea::make('rsa_public_key')
-                        ->label('Public Key')
-                        ->readOnly()
-                        ->rows(8)
-                        ->hintAction(
-                            Action::make('generate_rsa')
-                                ->label('Generate Kunci Baru')
-                                ->icon('heroicon-m-arrow-path')
-                                ->color('warning')
-                                ->requiresConfirmation()
-                                ->modalHeading('Buat Pasangan Kunci RSA Baru?')
-                                ->modalDescription('Ini akan menimpa kunci lama Anda. Jika kunci diubah, Anda wajib meng-upload Public Key baru ini ke dashboard DOKU agar pembayaran tetap berfungsi.')
-                                ->action(function (Set $set) {
-
-                                    $config = [
-                                        "digest_alg" => "sha256",
-                                        "private_key_bits" => 2048,
-                                        "private_key_type" => OPENSSL_KEYTYPE_RSA,
-                                        "config" => env('OPENSSL_CONFIG_PATH')
-                                    ];
-
-                                    $res = openssl_pkey_new($config);
-
-                                    openssl_pkey_export($res, $privateKey, null, $config);
-
-                                    $publicKey = openssl_pkey_get_details($res)["key"];
-
-                                    $set('rsa_private_key', $privateKey);
-                                    $set('rsa_public_key', $publicKey);
-
-                                    Notification::make()
-                                        ->title('Kunci RSA berhasil dibuat!')
-                                        ->body('Jangan lupa klik Simpan, lalu copy Public Key ke Dashboard DOKU.')
-                                        ->success()
-                                        ->send();
-                                })
-                        ),
-
                     ]),
             ]);
     }

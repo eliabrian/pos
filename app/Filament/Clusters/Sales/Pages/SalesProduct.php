@@ -67,12 +67,14 @@ class SalesProduct extends Page implements HasTable
                     'total_sold' => DB::table('order_product')
                         ->join('orders', 'orders.id', '=', 'order_product.order_id')
                         ->whereColumn('order_product.product_id', 'products.id')
+                        ->where('orders.status', 'completed')
                         ->where($applyDates)
                         ->selectRaw('COALESCE(SUM(order_product.quantity), 0)'),
 
                     'total_price' => DB::table('order_product')
                         ->join('orders', 'orders.id', '=', 'order_product.order_id')
                         ->whereColumn('order_product.product_id', 'products.id')
+                        ->where('orders.status', 'completed')
                         ->where($applyDates)
                         ->selectRaw('COALESCE(SUM(order_product.sub_total), 0)'),
                 ]);

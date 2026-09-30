@@ -53,7 +53,8 @@ class SalesOrder extends Page implements HasTable
                 'op',
                 'op.order_id', '=', 'orders.id'
             )
-            ->groupByRaw('DATE(orders.created_at), orders.tenant_id');
+            ->groupByRaw('DATE(orders.created_at), orders.tenant_id')
+            ->where('status', 'completed');
 
         return $table
             ->query(

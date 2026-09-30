@@ -65,6 +65,7 @@ class SalesCategory extends Page implements HasTable
                         ->join('products', 'products.id', '=', 'order_product.product_id')
                         ->join('orders', 'orders.id', '=', 'order_product.order_id')
                         ->whereColumn('products.category_id', 'categories.id')
+                        ->where('orders.status', 'completed')
                         ->where($applyDates)
                         ->selectRaw('COALESCE(SUM(order_product.quantity), 0)'),
 
@@ -72,6 +73,7 @@ class SalesCategory extends Page implements HasTable
                         ->join('products', 'products.id', '=', 'order_product.product_id')
                         ->join('orders', 'orders.id', '=', 'order_product.order_id')
                         ->whereColumn('products.category_id', 'categories.id')
+                        ->where('orders.status', 'completed')
                         ->where($applyDates)
                         ->selectRaw('COALESCE(SUM(order_product.sub_total), 0)'),
                 ]);

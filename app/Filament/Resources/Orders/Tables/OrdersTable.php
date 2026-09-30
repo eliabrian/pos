@@ -11,6 +11,7 @@ use Filament\Forms\Components\DatePicker;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\Indicator;
+use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Malzariey\FilamentDaterangepickerFilter\Filters\DateRangeFilter;
@@ -45,6 +46,14 @@ class OrdersTable
 
                 TextColumn::make('status')
                     ->badge()
+                    ->formatStateUsing(function (string $state): string {
+                        return match ($state) {
+                            'completed' => 'Berhasil',
+                            'pending' => 'Pending',
+                            'void' => 'Void',
+                            'refund' => 'Refund',
+                        };
+                    })
                     ->color(fn (string $state): string => match ($state) {
                         'completed' => 'success',
                         'refund' => 'danger',
@@ -54,6 +63,15 @@ class OrdersTable
             ])
             ->defaultSort('created_at', 'desc')
             ->filters([
+                SelectFilter::make('status')
+                    ->options([
+                        'completed' => 'Berhasil',
+                        'pending' => 'Pending',
+                        'void' => 'Void',
+                        'refund' => 'Refund',
+                    ])
+                    ->preload()
+                    ->searchable(),
                 DateRangeFilter::make('created_at')
                     ->defaultToday(),
             ])
