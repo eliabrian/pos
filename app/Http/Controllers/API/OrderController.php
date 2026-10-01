@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\API;
 
+use App\Events\PaymentSuccessful;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\OrderResource;
 use App\Models\Order;
@@ -179,7 +180,7 @@ class OrderController extends Controller
                 $order->products()->attach($product->id, [
                     'unit_name' => $product->name,
                     'quantity' => $item['quantity'],
-                    'unit_price' => $finalUnitPrice,
+                    'unit_price' => $baseUnitPrice,
                     'sub_total' => $subTotal,
                     'variant_selected' => json_encode($savedVariantsSnapshot),
                     'notes' => $item['notes'] ?? null,

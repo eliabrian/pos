@@ -52,7 +52,7 @@ class DokuService
                 'id' => $product->id,
                 'name' => $product->name,
                 'quantity' => $product->pivot->quantity,
-                'price' => (int) $product->pivot->unit_price,
+                'price' => (int) $product->pivot->sub_total,
             ];
         }
 
@@ -68,7 +68,8 @@ class DokuService
                 'payment_due_date' => 60,
                 'type' => 'SALE',
                 'payment_method_types' => [
-                    'QRIS'
+                    'QRIS',
+                    'VIRTUAL_ACCOUNT_BCA'
                 ]
             ],
         ];

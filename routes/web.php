@@ -12,9 +12,9 @@ Route::get('/', function () {
 Route::get('/test-checkout', function () {
     $tenant = Tenant::find(2);
 
-    $order = Order::find(25);
+    $order = Order::find(56);
 
     $service = new DokuService($tenant);
 
-    dd($service->dokuCheckout($order));
+    dd($service->checkStatus($order));
 });
