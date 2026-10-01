@@ -15,13 +15,17 @@ class DokuService
     public function __construct(Tenant $tenant)
     {
         $this->tenant = $tenant;
-        $this->baseUrl = 'https://api-sandbox.doku.com';
+        $this->baseUrl = config('payment.doku.sandbox');
+
+        if (app()->environment('production')) {
+            $this->baseUrl =config('payment.doku.production');
+        }
     }
 
     public function checkStatus(Order $order)
     {
         $clientId = $this->tenant->payment_client_id;
-        $requestTarget = '/orders/v1/status/' . $order->receipt_number;
+        $requestTarget = config('payment.doku.paths.check_status') . $order->receipt_number;
 
         $requestId = Str::uuid()->toString();
         $timestamp = now('UTC')->format('Y-m-d\TH:i:s\Z');
@@ -70,7 +74,7 @@ class DokuService
         ];
 
         $clientId = $this->tenant->payment_client_id;
-        $requestTarget = '/checkout/v1/payment';
+        $requestTarget = config('payment.doku.paths.doku_checkout');
 
         $requestId = Str::uuid()->toString();
         $timestamp = now('UTC')->format('Y-m-d\TH:i:s\Z');
