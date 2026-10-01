@@ -27,6 +27,7 @@ class OrderResource extends JsonApiResource
         return [
             'id' => $this->id,
             'receipt_number' => $this->receipt_number,
+            'notes' => $this->notes,
             'total_price' => $this->total_price,
             'payment_method' => $this->payment_method,
             'order_discount' => $this->order_discount,

@@ -19,6 +19,14 @@ class ShopStats extends StatsOverviewWidget
 
     protected static ?int $sort = 0;
 
+    protected function getListeners(): array
+    {
+        $tenant = Filament::getTenant()->slug;
+        return [
+            "echo-private:dashboard.{$tenant},.OrderCompleted" => '$refresh',
+        ];
+    }
+
     protected function getColumns(): int|array|null
     {
         return [

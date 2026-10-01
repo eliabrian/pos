@@ -2,23 +2,26 @@
 
 namespace App\Events;
 
-use App\Models\Product;
+use App\Models\Category;
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
+use Illuminate\Broadcasting\PresenceChannel;
+use Illuminate\Broadcasting\PrivateChannel;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class ProductUpdated implements ShouldBroadcastNow
+class CategoryUpdated implements ShouldBroadcastNow
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
     /**
      * Create a new event instance.
      */
-    public function __construct(public Product $product) {
-        $product->load(['category', 'variants.variantItems']);
-    }
+    public function __construct(
+        public Category $category
+    ) {}
 
     /**
      * Get the channels the event should broadcast on.
@@ -28,7 +31,7 @@ class ProductUpdated implements ShouldBroadcastNow
     public function broadcastOn(): array
     {
         return [
-            new Channel('product.' . $this->product->tenant->slug),
+            new Channel('product.' . $this->category->tenant->slug),
         ];
     }
 }

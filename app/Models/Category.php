@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Events\CategoryUpdated;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
@@ -31,6 +32,13 @@ class Category extends Model
     protected function visible(Builder $query): void
     {
         $query->where('is_visible', true);
+    }
+
+    protected static function booted(): void
+    {
+        static::updated(function ($category) {
+            CategoryUpdated::dispatch($category);
+        });
     }
 
     public function tenant(): BelongsTo

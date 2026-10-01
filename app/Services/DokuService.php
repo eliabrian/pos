@@ -18,7 +18,7 @@ class DokuService
         $this->baseUrl = config('payment.doku.sandbox');
 
         if (app()->environment('production')) {
-            $this->baseUrl =config('payment.doku.production');
+            $this->baseUrl = config('payment.doku.production');
         }
     }
 

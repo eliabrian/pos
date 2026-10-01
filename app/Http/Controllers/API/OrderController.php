@@ -100,6 +100,7 @@ class OrderController extends Controller
         $validated = $request->validate([
             'payment_method' => 'required|string',
             'status' => 'nullable|string',
+            'notes' =>'nullable|string',
             'order_discount' => 'nullable',
             'products' => 'required|array|min:1',
             'products.*.id' => 'required|exists:products,id',
@@ -141,6 +142,7 @@ class OrderController extends Controller
                 'tenant_id' => $tenantId,
                 'total_price' => 0,
                 'payment_method' => $validated['payment_method'],
+                'notes' => $validated['notes'],
                 'status' => $validated['status'] ?? 'completed',
                 'order_discount' => $validated['order_discount'],
             ]);

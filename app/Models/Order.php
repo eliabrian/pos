@@ -2,13 +2,14 @@
 
 namespace App\Models;
 
+use App\Events\OrderCompleted;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
-#[Fillable(['tenant_id', 'receipt_number', 'order_discount', 'total_price', 'status', 'payment_method', 'payment_url'])]
+#[Fillable(['tenant_id', 'receipt_number', 'order_discount', 'total_price', 'status', 'payment_method', 'notes', 'payment_url'])]
 class Order extends Model
 {
     protected static function booted()
@@ -32,6 +33,12 @@ class Order extends Model
                 Carbon::now()->format('dmY'),
                 str_pad($nextSequence, 5, '0', STR_PAD_LEFT)
             );
+        });
+
+        static::saved(function (Order $order) {
+            if ($order->isDirty('status') && $order->status === 'completed') {
+                OrderCompleted::dispatch($order);
+            }
         });
     }
 
