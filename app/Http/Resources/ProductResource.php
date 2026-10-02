@@ -21,6 +21,7 @@ class ProductResource extends JsonApiResource
         'tenant',
         'category',
         'variants',
+        'station',
     ];
 
     /**

@@ -58,7 +58,12 @@ class Product extends Model
     {
         return $this->belongsToMany(Order::class)
             ->using(OrderProduct::class)
-            ->withPivot(['unit_name', 'quantity', 'unit_price', 'sub_total', 'variant_selected', 'notes'])
+            ->withPivot(['unit_name', 'quantity', 'unit_price', 'sub_total', 'variant_selected', 'notes', 'status'])
             ->chaperone();
+    }
+
+    public function station(): BelongsTo
+    {
+        return $this->belongsTo(Station::class);
     }
 }

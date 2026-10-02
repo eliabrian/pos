@@ -126,6 +126,14 @@ class ProductForm
                                 ->searchable()
                                 ->exists('categories', 'id'),
 
+                            Select::make('station')
+                                ->label('Panel')
+                                ->relationship('station', 'name')
+                                ->native(false)
+                                ->preload()
+                                ->searchable()
+                                ->exists('stations', 'id'),
+
                             Toggle::make('is_visible')
                                 ->label('Visibilitas')
                                 ->default(true)

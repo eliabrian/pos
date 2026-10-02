@@ -51,7 +51,7 @@ class Order extends Model
     {
         return $this->belongsToMany(Product::class)
             ->using(OrderProduct::class)
-            ->withPivot(['unit_name', 'quantity', 'unit_price', 'sub_total', 'variant_selected', 'notes'])
+            ->withPivot(['unit_name', 'quantity', 'unit_price', 'sub_total', 'variant_selected', 'notes', 'status'])
             ->chaperone();
     }
 }

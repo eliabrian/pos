@@ -43,6 +43,7 @@ class OrderResource extends JsonApiResource
                         'sub_total' => $product->pivot->sub_total,
                         'notes' => $product->pivot->notes,
                         'variant_selected' => $product->pivot->variant_selected,
+                        'station' => $product->station,
                     ];
                 });
             }),
