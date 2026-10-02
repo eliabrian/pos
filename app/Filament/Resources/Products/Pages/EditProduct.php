@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Products\Pages;
 
+use App\Events\ProductDeleted;
 use App\Events\ProductUpdated;
 use App\Filament\Resources\Products\ProductResource;
 use Filament\Actions\DeleteAction;
@@ -21,7 +22,10 @@ class EditProduct extends EditRecord
     {
         return [
             DeleteAction::make()
-                ->icon(Heroicon::Trash),
+                ->icon(Heroicon::Trash)
+                ->after(function ($record) {
+                    ProductDeleted::dispatch($record);
+                }),
         ];
     }
 }
