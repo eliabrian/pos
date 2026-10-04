@@ -44,6 +44,7 @@ class OrderResource extends JsonApiResource
                         'notes' => $product->pivot->notes,
                         'variant_selected' => $product->pivot->variant_selected,
                         'station' => $product->station,
+                        'status' => $product->pivot->status,
                     ];
                 });
             }),

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\API;
 
+use App\Events\OrderSentToKds;
 use App\Events\PaymentSuccessful;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\OrderResource;
@@ -64,6 +65,7 @@ class OrderController extends Controller
 
             if ($transactionStatus === 'SUCCESS') {
                 $order->update(['status' => 'completed']);
+                OrderSentToKds::dispatch($order, $order->tenant->slug);
             } elseif (in_array($transactionStatus, ['FAILED', 'EXPIRED'])) {
                 $order->update(['status' => 'pending']);
             }
@@ -217,6 +219,8 @@ class OrderController extends Controller
                 } else {
                     throw new Exception('Gagal generate DOKU Checkout: ' . json_encode($dokuResponse));
                 }
+            } else {
+                OrderSentToKds::dispatch($order, $order->tenant->slug);
             }
 
             return $order;
@@ -228,5 +232,27 @@ class OrderController extends Controller
             'message' => 'Order created successfully',
             'data' => $order
         ], 201);
+    }
+
+    public function bump(Request $request, Order $order)
+    {
+        $request->validate([
+            'station_id' => 'required|exists:stations,id',
+        ]);
+
+        $stationId = $request->station_id;
+
+        $productIds = $order->products()
+            ->where('station_id', $stationId)
+            ->pluck('products.id');
+
+        if ($productIds->isNotEmpty()) {
+            DB::table('order_product')
+                ->where('order_id', $order->id)
+                ->whereIn('product_id', $productIds)
+                ->update(['status' => 'ready']);
+        }
+
+        return response()->json(['message' => 'Ticket bumped successfully']);
     }
 }

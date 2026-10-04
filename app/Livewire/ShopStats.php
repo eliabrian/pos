@@ -55,7 +55,7 @@ class ShopStats extends StatsOverviewWidget
 
         $currentQuery = Order::query()
             ->where('tenant_id', Filament::getTenant()->id)
-            ->where('status', 'completed')
+            ->where('orders.status', 'completed')
             ->whereBetween('created_at', [$start, $end]);
 
         $currentOrders = $currentQuery->count();
@@ -68,7 +68,7 @@ class ShopStats extends StatsOverviewWidget
 
         $previousQuery = Order::query()
             ->where('tenant_id', Filament::getTenant()->id)
-            ->where('status', 'completed')
+            ->where('orders.status', 'completed')
             ->whereBetween('created_at', [$previousStart, $previousEnd]);
 
         $previousOrders = $previousQuery->count();
