@@ -7,6 +7,7 @@ use Carbon\Carbon;
 use Filament\Facades\Filament;
 use Filament\Widgets\ChartWidget;
 use Filament\Widgets\Concerns\InteractsWithPageFilters;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class YearlyRevenueChart extends ChartWidget
@@ -16,6 +17,11 @@ class YearlyRevenueChart extends ChartWidget
     protected ?string $heading = 'Tren Penjualan Tahunan';
 
     protected static ?int $sort = 1;
+
+    public static function canView(): bool
+    {
+        return !Auth::user()->isSystemAdmin();
+    }
 
     protected function getData(): array
     {

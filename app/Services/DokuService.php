@@ -67,10 +67,10 @@ class DokuService
             'payment' => [
                 'payment_due_date' => 60,
                 'type' => 'SALE',
-                'payment_method_types' => [
-                    'QRIS',
-                    'VIRTUAL_ACCOUNT_BCA'
-                ]
+                // 'payment_method_types' => [
+                //     'QRIS',
+                //     'VIRTUAL_ACCOUNT_BCA'
+                // ]
             ],
         ];
 

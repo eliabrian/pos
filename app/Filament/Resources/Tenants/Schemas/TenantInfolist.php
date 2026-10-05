@@ -35,6 +35,7 @@ class TenantInfolist
                     ->columns(2)
                     ->schema([
                         TextEntry::make('plan')
+                            ->label('Status')
                             ->badge()
                             ->getStateUsing(fn ($record): string => ucfirst($record->plan))
                             ->color(function ($record) {

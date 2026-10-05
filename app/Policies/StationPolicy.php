@@ -4,6 +4,7 @@ namespace App\Policies;
 
 use App\Models\Station;
 use App\Models\User;
+use Filament\Facades\Filament;
 use Illuminate\Auth\Access\Response;
 
 class StationPolicy
@@ -13,7 +14,7 @@ class StationPolicy
      */
     public function viewAny(User $user): bool
     {
-        return !$user->isSystemAdmin();
+        return Filament::getTenant()->hasFeature('has_kds') && !$user->isSystemAdmin();
     }
 
     /**
@@ -21,7 +22,7 @@ class StationPolicy
      */
     public function view(User $user, Station $station): bool
     {
-        return !$user->isSystemAdmin();
+        return Filament::getTenant()->hasFeature('has_kds') && !$user->isSystemAdmin();
     }
 
     /**
@@ -29,7 +30,7 @@ class StationPolicy
      */
     public function create(User $user): bool
     {
-        return !$user->isSystemAdmin();
+        return Filament::getTenant()->hasFeature('has_kds') && !$user->isSystemAdmin();
     }
 
     /**
@@ -37,7 +38,7 @@ class StationPolicy
      */
     public function update(User $user, Station $station): bool
     {
-        return !$user->isSystemAdmin();
+        return Filament::getTenant()->hasFeature('has_kds') && !$user->isSystemAdmin();
     }
 
     /**
@@ -45,7 +46,7 @@ class StationPolicy
      */
     public function delete(User $user, Station $station): bool
     {
-        return !$user->isSystemAdmin();
+        return Filament::getTenant()->hasFeature('has_kds') && !$user->isSystemAdmin();
     }
 
     /**

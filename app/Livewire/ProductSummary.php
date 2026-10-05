@@ -12,6 +12,7 @@ use Filament\Tables\Table;
 use Filament\Widgets\Concerns\InteractsWithPageFilters;
 use Filament\Widgets\TableWidget;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class ProductSummary extends TableWidget
@@ -21,6 +22,11 @@ class ProductSummary extends TableWidget
     protected static ?int $sort = 2;
 
     protected int|string|array $columnSpan = 'full';
+
+    public static function canView(): bool
+    {
+        return !Auth::user()->isSystemAdmin();
+    }
 
     public function table(Table $table): Table
     {

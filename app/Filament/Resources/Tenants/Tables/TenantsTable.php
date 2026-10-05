@@ -10,6 +10,7 @@ use Filament\Actions\ViewAction;
 use Filament\Support\Enums\FontFamily;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 
 class TenantsTable
@@ -23,6 +24,7 @@ class TenantsTable
                     ->sortable(),
 
                 TextColumn::make('plan')
+                    ->label('Status')
                     ->getStateUsing(fn ($record): string => ucfirst($record->plan))
                     ->color(function ($record) {
                         return match($record->plan) {
@@ -51,7 +53,13 @@ class TenantsTable
                     ->sortable(),
             ])
             ->filters([
-                //
+                SelectFilter::make('plan')
+                    ->label('Status')
+                    ->options([
+                        'trial' => 'Trial',
+                        'active' => 'Active',
+                        'suspended' => 'Suspended',
+                    ])
             ])
             ->recordActions([
                 ActionGroup::make([

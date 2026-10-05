@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Tenants\Pages;
 
+use App\Filament\Resources\Tenants\RelationManagers\SubscriptionsRelationManager;
 use App\Filament\Resources\Tenants\RelationManagers\UsersRelationManager;
 use App\Filament\Resources\Tenants\TenantResource;
 use Filament\Actions\DeleteAction;
@@ -17,6 +18,7 @@ class EditTenant extends EditRecord
     {
         return [
             UsersRelationManager::class,
+            SubscriptionsRelationManager::class,
         ];
     }
 

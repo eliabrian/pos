@@ -7,6 +7,7 @@ use Carbon\Carbon;
 use Filament\Facades\Filament;
 use Filament\Widgets\ChartWidget;
 use Filament\Widgets\Concerns\InteractsWithPageFilters;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class PeakHoursChart extends ChartWidget
@@ -16,6 +17,11 @@ class PeakHoursChart extends ChartWidget
     protected ?string $heading = 'Jam Sibuk (Peak Hours)';
 
     protected static ?int $sort = 2;
+
+    public static function canView(): bool
+    {
+        return !Auth::user()->isSystemAdmin();
+    }
 
     protected function getData(): array
     {

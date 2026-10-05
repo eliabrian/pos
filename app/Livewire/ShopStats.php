@@ -10,6 +10,8 @@ use Filament\Support\Icons\Heroicon;
 use Filament\Widgets\Concerns\InteractsWithPageFilters;
 use Filament\Widgets\StatsOverviewWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
+use Illuminate\Support\Facades\Auth;
+use Override;
 
 class ShopStats extends StatsOverviewWidget
 {
@@ -18,6 +20,11 @@ class ShopStats extends StatsOverviewWidget
     protected int|string|array $columnSpan = 'full';
 
     protected static ?int $sort = 0;
+
+    public static function canView(): bool
+    {
+        return !Auth::user()->isSystemAdmin();
+    }
 
     protected function getListeners(): array
     {

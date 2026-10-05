@@ -59,6 +59,7 @@ class TenantForm
                     ->visible(fn () => Auth::user()->isSystemAdmin())
                     ->schema([
                         Select::make('plan')
+                            ->label('Status')
                             ->options([
                                 'trial' => 'Trial',
                                 'active' => 'Active',
