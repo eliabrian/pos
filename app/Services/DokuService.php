@@ -25,7 +25,7 @@ class DokuService
     public function checkStatus(Order $order)
     {
         $clientId = $this->tenant->payment_client_id;
-        $requestTarget = config('payment.doku.paths.check_status') . $order->receipt_number;
+        $requestTarget = config('payment.doku.paths.check_status') . '/' . $order->receipt_number;
 
         $requestId = Str::uuid()->toString();
         $timestamp = now('UTC')->format('Y-m-d\TH:i:s\Z');

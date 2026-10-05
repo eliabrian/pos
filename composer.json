@@ -12,6 +12,7 @@
         "laravel/reverb": "^1.0",
         "laravel/sanctum": "^4.0",
         "laravel/tinker": "^3.0",
+        "linkxtr/laravel-qrcode": "^3.2",
         "malzariey/filament-daterangepicker-filter": "^5.0",
         "pusher/pusher-php-server": "^7.3"
     },

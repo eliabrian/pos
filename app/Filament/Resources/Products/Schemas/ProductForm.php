@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Products\Schemas;
 
+use Filament\Facades\Filament;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Repeater\TableColumn;
@@ -132,7 +133,10 @@ class ProductForm
                                 ->native(false)
                                 ->preload()
                                 ->searchable()
-                                ->exists('stations', 'id'),
+                                ->exists('stations', 'id')
+                                ->visible(function () {
+                                    return Filament::getTenant()->hasFeature('has_kds');
+                                }),
 
                             Toggle::make('is_visible')
                                 ->label('Visibilitas')
