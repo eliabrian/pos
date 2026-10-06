@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['name', 'tenant_id', 'category_id', 'sku', 'image', 'description', 'stock', 'price', 'discount', 'final_price', 'sort', 'is_visible'])]
+#[Fillable(['name', 'tenant_id', 'category_id', 'sku', 'image', 'description', 'stock', 'price', 'discount', 'final_price', 'sort', 'is_visible', 'is_qr_order'])]
 class Product extends Model
 {
     /**
@@ -27,6 +27,7 @@ class Product extends Model
             'final_price' => 'float',
             'sort' => 'integer',
             'is_visible' => 'boolean',
+            'is_qr_order' => 'boolean',
         ];
     }
 

@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
-#[Fillable(['name', 'slug', 'plan', 'address', 'phone', 'business_email', 'qris_client_id', 'payment_client_id', 'payment_api_key', 'payment_secret_key', 'rsa_private_key', 'rsa_public_key'])]
+#[Fillable(['name', 'slug', 'plan', 'address', 'phone', 'business_email', 'open_hours', 'logo', 'cover', 'qris_client_id', 'payment_client_id', 'payment_api_key', 'payment_secret_key', 'rsa_private_key', 'rsa_public_key'])]
 class Tenant extends Model
 {
     protected function casts()
@@ -20,6 +20,7 @@ class Tenant extends Model
             'payment_secret_key' => 'encrypted',
             'rsa_private_key' => 'encrypted',
             'rsa_public_key' => 'encrypted',
+            'open_hours' => 'array',
         ];
     }
 

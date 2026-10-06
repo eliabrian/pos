@@ -4,6 +4,7 @@ use App\Http\Controllers\API\AuthController;
 use App\Http\Controllers\API\CategoryController;
 use App\Http\Controllers\API\OrderController;
 use App\Http\Controllers\API\ProductController;
+use App\Http\Controllers\QrOrderController;
 use App\Http\Middleware\CheckTenantAccess;
 use App\Models\Station;
 use Illuminate\Http\Request;

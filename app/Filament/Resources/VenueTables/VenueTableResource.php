@@ -65,19 +65,12 @@ class VenueTableResource extends Resource
             ->columns([
                 TextColumn::make('name')
                     ->label('Nama Meja')
-                    ->searchable(),
-
-                TextColumn::make('qr_token')
-                    ->label('Tautan')
+                    ->searchable()
                     ->icon(Heroicon::ArrowTopRightOnSquare)
                     ->url(function ($record) {
                         $tenantSlug = Filament::getTenant()->slug;
                         return url("/order/{$tenantSlug}/{$record->qr_token}");
-                    }, true)
-                    ->formatStateUsing(function ($state) {
-                        $tenantSlug = Filament::getTenant()->slug;
-                        return url("/order/{$tenantSlug}/{$state}");
-                    })
+                    }, true),
             ])
             ->filters([
                 //

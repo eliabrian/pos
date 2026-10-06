@@ -17,6 +17,7 @@ use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
+use Filament\Support\Icons\Heroicon;
 use Filament\Support\RawJs;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Storage;
@@ -141,7 +142,17 @@ class ProductForm
                             Toggle::make('is_visible')
                                 ->label('Visibilitas')
                                 ->default(true)
-                                ->helperText('Menentukan apakah produk ini ditampilkan di saluran penjualan.'),
+                                ->helperText('Menentukan apakah produk ini ditampilkan di saluran penjualan.')
+                                ->onIcon(Heroicon::Eye)
+                                ->offIcon(Heroicon::EyeSlash),
+
+                            Toggle::make('is_qr_order')
+                                ->label('QR Order')
+                                ->default(false)
+                                ->visible(fn () => Filament::getTenant()->hasFeature('has_qr_order'))
+                                ->helperText('Menentukan apakah produk ini di tampilkan di saluran QR Order.')
+                                ->onIcon(Heroicon::Eye)
+                                ->offIcon(Heroicon::EyeSlash),
                         ]),
 
                     Section::make('Foto Produk')

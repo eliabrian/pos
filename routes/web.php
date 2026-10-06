@@ -1,20 +1,21 @@
 <?php
 
-use App\Models\Order;
-use App\Models\Tenant;
-use App\Services\DokuService;
+use App\Http\Controllers\QrOrderController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
     return view('welcome');
 });
 
-Route::get('/test-checkout', function () {
-    $tenant = Tenant::find(2);
+Route::get('/order/{tenant:slug}/{token}', [QrOrderController::class, 'scan'])->name('qr.scan');
 
-    $order = Order::find(56);
+Route::get('/order/{shop}', function () {
+    if (!session()->has('active_qr_token')) {
+        abort(404);
+    }
 
-    $service = new DokuService($tenant);
+    return view('mobile');
+})->name('mobile.menu');
 
-    dd($service->checkStatus($order));
-});
+Route::get('/api/mobile/profile', [QrOrderController::class, 'getStoreProfile']);
+Route::get('/api/mobile/products', [QrOrderController::class, 'getProducts']);
