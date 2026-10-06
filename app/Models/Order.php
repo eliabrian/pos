@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
-#[Fillable(['tenant_id', 'receipt_number', 'order_discount', 'total_price', 'status', 'payment_method', 'notes', 'payment_url'])]
+#[Fillable(['tenant_id', 'receipt_number', 'order_discount', 'total_price', 'status', 'payment_method', 'notes', 'payment_url', 'venue_table_id', 'order_source'])]
 class Order extends Model
 {
     protected static function booted()
@@ -53,5 +53,10 @@ class Order extends Model
             ->using(OrderProduct::class)
             ->withPivot(['unit_name', 'quantity', 'unit_price', 'sub_total', 'variant_selected', 'notes', 'status'])
             ->chaperone();
+    }
+
+    public function venueTable(): BelongsTo
+    {
+        return $this->belongsTo(VenueTable::class, 'venue_table_id');
     }
 }

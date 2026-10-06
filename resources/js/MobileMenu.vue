@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, onUnmounted, ref } from 'vue';
 
 const profile = ref(null)
 const categories = computed(() => {
@@ -24,6 +24,10 @@ const quantity = ref(1);
 const note = ref('');
 const cart = ref([]);
 const isCartOpen = ref(false);
+const selectedCategory = ref('Semua');
+const isSubmitting = ref(false);
+const isPaymentSuccess = ref(false);
+let statusInterval = null;
 
 onMounted(async () => {
     try {
@@ -32,12 +36,26 @@ onMounted(async () => {
         if (profileRes.ok) profile.value = await profileRes.json();
 
         await fetchProducts()
+
+        if (!document.querySelector('script[src*="jokul-checkout"]')) {
+            const script = document.createElement('script');
+            const isLocal = window.location.hostname === 'localhost' || window.location.hostname.endsWith('.test');
+            script.src = isLocal
+                ? 'https://sandbox.doku.com/jokul-checkout-js/v1/jokul-checkout-1.0.0.js'
+                : 'https://jokul.doku.com/jokul-checkout-js/v1/jokul-checkout-1.0.0.js';
+            script.async = true;
+            document.head.appendChild(script);
+        }
     } catch (error) {
         console.error('Error fetching profile:', error);
     } finally {
         loading.value = false;
     }
 })
+
+onUnmounted(() => {
+    if (statusInterval) clearInterval(statusInterval);
+});
 
 const fetchProducts = async () => {
     const response = await fetch('/api/mobile/products?include=category,variants');
@@ -169,13 +187,122 @@ const removeFromCart = (cartItemId) => {
     }
 };
 
+const checkOrderStatus = (receiptNumber) => {
+    return new Promise((resolve, reject) => {
+        if (statusInterval) clearInterval(statusInterval);
+
+        statusInterval = setInterval(async () => {
+            try {
+                const response = await fetch(`/api/mobile/orders/${receiptNumber}/status`);
+                const data = await response.json();
+
+                if (data.status === 'completed') {
+                    if (window.closeJokul) window.closeJokul();
+                    clearInterval(statusInterval);
+                    resolve(true);
+                } else if (data.status === 'failed') {
+                    clearInterval(statusInterval);
+                    reject(new Error('Pembayaran gagal atau kadaluarsa.'));
+                }
+            } catch (error) {
+                console.error('Error checking status', error);
+            }
+        }, 5000);
+    });
+};
+
 const placeOrder = async () => {
-    // We will build the Laravel API submission next
-    console.log('Submitting Order:', cart.value);
-    alert('Memproses pesanan...');
+    if (cart.value.length === 0) return;
+    isSubmitting.value = true;
+
+    // 1. Format the cart array to match EXACTLY what Laravel validates
+    const payload = {
+        payment_method: 'dynamic_qris', // Or map this if you give them a choice
+        notes: '', // General order notes
+        products: cart.value.map(item => {
+
+            // Flatten our variant object into a single array of item IDs
+            let flatVariantItemIds = [];
+            for (const key in item.variants) {
+                const selection = item.variants[key];
+                if (selection) {
+                    if (Array.isArray(selection)) {
+                        flatVariantItemIds.push(...selection);
+                    } else {
+                        flatVariantItemIds.push(selection);
+                    }
+                }
+            }
+
+            return {
+                id: item.product.id,
+                quantity: item.quantity,
+                variant_items: flatVariantItemIds,
+                notes: item.note // The specific note for this item
+            };
+        })
+    };
+
+    try {
+        // Because this is a POST request on a web route, Laravel needs the CSRF token.
+        // The easiest way is to grab it from the meta tag in your blade file.
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+        const response = await fetch('/api/mobile/orders', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': csrfToken
+            },
+            body: JSON.stringify(payload)
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+            if (result.data.payment_url && payload.payment_method === 'dynamic_qris') {
+                // FORCE REMOVE old DOKU wrapper if it lingered from a previous transaction
+                const oldJokul = document.getElementById('jokul_checkout_modal');
+                if (oldJokul) oldJokul.remove();
+
+                if (window.loadJokulCheckout) {
+                    window.loadJokulCheckout(result.data.payment_url);
+                } else {
+                    window.location.href = result.data.payment_url;
+                }
+
+                try {
+                    await checkOrderStatus(result.data.receipt_number);
+
+                    // IF SUCCESS:
+                    cart.value = [];
+                    isCartOpen.value = false;
+                    isPaymentSuccess.value = true; // Trigger success screen
+
+                } catch (err) {
+                    alert(err.message);
+                }
+            } else {
+                // Cash Payment / Pay at Cashier
+                cart.value = [];
+                isCartOpen.value = false;
+                isPaymentSuccess.value = true;
+            }
+        } else {
+            alert(result.message || 'Terjadi kesalahan saat membuat pesanan.');
+        }
+
+    } catch (error) {
+        console.error('Error submitting order:', error);
+        alert('Gagal terhubung ke server.');
+    } finally {
+        isSubmitting.value = false;
+    }
 };
 
 const openModal = (product) => {
+    if (product.stock === 0) return;
     selectedProduct.value = product;
     quantity.value = 1;
     selectedVariants.value = {};
@@ -262,7 +389,7 @@ const formatPrice = (price) => {
                     class="w-full h-full object-cover"
                 />
                 <!-- Gradient overlay to make back buttons or tags readable if added later -->
-                <div class="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent"></div>
+                <div class="absolute inset-0 bg-linear-to-t from-black/40 to-transparent"></div>
             </div>
 
             <div class="px-5 relative">
@@ -304,14 +431,43 @@ const formatPrice = (price) => {
             </div>
         </div>
 
+        <div v-if="categories.length > 0" class="sticky top-0 z-30 bg-gray-50/95 backdrop-blur-sm py-3 px-4 border-b border-gray-200 overflow-x-auto whitespace-nowrap flex gap-2" style="scrollbar-width: none;">
+            <button
+                @click="selectedCategory = 'Semua'"
+                :class="[
+                    'px-4 py-1.5 rounded-full text-sm font-bold transition-all shadow-sm shrink-0',
+                    selectedCategory === 'Semua' ? 'bg-blue-600 text-white border-transparent' : 'bg-white text-gray-600 border border-gray-200'
+                ]"
+            >
+                Semua
+            </button>
+
+            <button
+                v-for="cat in categories"
+                :key="cat"
+                @click="selectedCategory = cat"
+                :class="[
+                    'px-4 py-1.5 rounded-full text-sm font-bold transition-all shadow-sm shrink-0',
+                    selectedCategory === cat ? 'bg-blue-600 text-white border-transparent' : 'bg-white text-gray-600 border border-gray-200'
+                ]"
+            >
+                {{ cat }}
+            </button>
+        </div>
+
         <!-- Menu Section -->
         <div v-if="categories.length > 0" class="mt-4 px-4 pb-20">
 
             <!-- Loop through the computed category strings -->
-            <div v-for="categoryName in categories" :key="categoryName" class="mb-8">
+            <div
+                v-for="categoryName in categories"
+                :key="categoryName"
+                v-show="selectedCategory === 'Semua' || selectedCategory === categoryName"
+                class="mb-8"
+            >
 
                 <!-- Category Title -->
-                <h2 class="text-xl font-bold text-gray-900 mb-4">{{ categoryName }}</h2>
+                <h2 class="text-xl font-bold text-gray-500 mb-4">{{ categoryName }}</h2>
 
                 <!-- Product Grid/List -->
                 <div class="space-y-4">
@@ -321,10 +477,13 @@ const formatPrice = (price) => {
                         v-for="product in products.filter(p => p.category === categoryName)"
                         :key="product.id"
                         @click="openModal(product)"
-                        class="bg-white rounded-xl p-3 shadow-sm border border-gray-100 flex gap-4"
+                        :class="[
+                            'bg-white rounded-xl p-3 shadow-sm border border-gray-100 flex gap-4 transition-all',
+                            product.stock === 0 ? 'opacity-60 grayscale cursor-not-allowed' : 'active:scale-[0.98]'
+                        ]"
                     >
                         <!-- Product Image -->
-                        <div class="w-24 h-24 shrink-0 bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center">
+                        <div class="w-24 h-24 shrink-0 bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center relative">
                             <img
                                 v-if="product.image"
                                 :src="`http://pos.test/` + product.image"
@@ -333,6 +492,11 @@ const formatPrice = (price) => {
                             <svg v-else class="w-8 h-8 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                             </svg>
+
+                            <!-- NEW: Habis Overlay on Image -->
+                            <div v-if="product.stock === 0" class="absolute inset-0 bg-black/30 flex items-center justify-center backdrop-blur-[1px]">
+                                <span class="bg-red-500 text-white text-[10px] font-bold px-2 py-1 rounded shadow-sm tracking-wide uppercase">Habis</span>
+                            </div>
                         </div>
 
                         <!-- Product Details -->
@@ -343,16 +507,33 @@ const formatPrice = (price) => {
                             </div>
 
                             <div class="flex items-center justify-between mt-2">
-                                <!-- Using final_price with a fallback to price, in case you use discounts -->
-                                <span class="font-bold">
-                                    {{ formatPrice(product.final_price || product.price) }}
-                                </span>
+                                <div class="flex flex-col">
+                                    <!-- Discounted State -->
+                                    <div v-if="product.final_price && product.final_price < product.price">
+                                        <div class="flex items-center gap-2">
+                                            <span class="font-bold">{{ formatPrice(product.final_price) }}</span>
+                                            <span v-if="product.discount" class="bg-red-100 text-red-600 text-[10px] font-bold px-1.5 py-0.5 rounded tracking-wide uppercase">
+                                                {{ product.discount }}%
+                                            </span>
+                                        </div>
+                                        <span class="text-xs text-gray-400 line-through mt-0.5 block">{{ formatPrice(product.price) }}</span>
+                                    </div>
 
-                                <button @click="openModal(product)" class="bg-gray-100 text-gray-600 font-bold px-2 py-1.5 rounded text-sm hover:bg-gray-100 transition">
+                                    <!-- Normal State -->
+                                    <span v-else class="font-bold">
+                                        {{ formatPrice(product.price) }}
+                                    </span>
+                                </div>
+
+                                <!-- NEW: Show Plus Button OR Habis Text -->
+                                <button v-if="product.stock > 0" class="bg-gray-100 text-gray-600 font-bold px-2 py-1.5 rounded text-sm hover:bg-gray-200 transition">
                                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="3" stroke="currentColor" class="size-4">
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
                                     </svg>
                                 </button>
+                                <span v-else class="text-xs font-bold text-red-500 bg-red-50 px-2 py-1 rounded border border-red-100 shrink-0">
+                                    Habis
+                                </span>
                             </div>
                         </div>
                     </div>
@@ -594,6 +775,37 @@ const formatPrice = (price) => {
                 </button>
             </div>
 
+        </div>
+    </transition>
+
+    <!-- SUCCESS FULLSCREEN VIEW -->
+    <transition
+        enter-active-class="transition-opacity duration-300"
+        enter-from-class="opacity-0"
+        enter-to-class="opacity-100"
+        leave-active-class="transition-opacity duration-300"
+        leave-from-class="opacity-100"
+        leave-to-class="opacity-0"
+    >
+        <div v-if="isPaymentSuccess" class="fixed inset-0 z-[100] bg-white flex flex-col items-center justify-center p-6 text-center">
+            <!-- Success Animated Icon -->
+            <div class="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center mb-6 shadow-inner shadow-green-200">
+                <svg class="w-12 h-12 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path>
+                </svg>
+            </div>
+
+            <h2 class="text-3xl font-extrabold text-gray-900 mb-2">Pesanan Diterima!</h2>
+            <p class="text-gray-500 mb-8 max-w-xs">
+                Pembayaran telah berhasil dikonfirmasi. Dapur sedang menyiapkan pesanan Anda ke <span class="font-bold text-gray-900">{{ profile?.table_name }}</span>.
+            </p>
+
+            <button
+                @click="isPaymentSuccess = false"
+                class="bg-gray-100 text-gray-800 font-bold py-3.5 px-8 rounded-xl active:bg-gray-200 transition"
+            >
+                Pesan Menu Lainnya
+            </button>
         </div>
     </transition>
 </template>

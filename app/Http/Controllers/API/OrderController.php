@@ -147,6 +147,7 @@ class OrderController extends Controller
                 'notes' => $validated['notes'],
                 'status' => $validated['status'] ?? 'completed',
                 'order_discount' => $validated['order_discount'],
+                'order_source' => 'pos',
             ]);
 
             $totalPrice = 0;

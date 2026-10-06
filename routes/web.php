@@ -19,3 +19,5 @@ Route::get('/order/{shop}', function () {
 
 Route::get('/api/mobile/profile', [QrOrderController::class, 'getStoreProfile']);
 Route::get('/api/mobile/products', [QrOrderController::class, 'getProducts']);
+Route::post('/api/mobile/orders', [QrOrderController::class, 'submitOrder'])->name('mobile.api.order');
+Route::get('/api/mobile/orders/{receiptNumber}/status', [QrOrderController::class, 'checkStatus']);

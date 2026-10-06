@@ -48,11 +48,12 @@ class DokuService
         $products = $order->products;
 
         foreach ($products as $index => $product) {
+            $unitPrice = $product->pivot->sub_total / $product->pivot->quantity;
             $items[$index] = [
                 'id' => $product->id,
                 'name' => $product->name,
                 'quantity' => $product->pivot->quantity,
-                'price' => (int) $product->pivot->sub_total,
+                'price' => (int) round($unitPrice),
             ];
         }
 
@@ -67,10 +68,10 @@ class DokuService
             'payment' => [
                 'payment_due_date' => 60,
                 'type' => 'SALE',
-                // 'payment_method_types' => [
-                //     'QRIS',
-                //     'VIRTUAL_ACCOUNT_BCA'
-                // ]
+                'payment_method_types' => [
+                    'QRIS',
+                    'VIRTUAL_ACCOUNT_BCA'
+                ]
             ],
         ];
 
